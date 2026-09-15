@@ -33,8 +33,14 @@ Useful options:
 --model-path Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
 --device cuda:0
 --language Auto
+--attn-implementation sdpa
 --overwrite
 ```
+
+The attention backend defaults to PyTorch SDPA and does not require the
+optional `flash-attn` package. Use `--attn-implementation eager` for the plain
+PyTorch implementation, or select `flash_attention_2` only in an environment
+where FlashAttention 2 is installed and compatible with the GPU.
 
 Each speaker gets a separate directory:
 

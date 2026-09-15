@@ -39,6 +39,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--device", default="cuda:0")
     parser.add_argument("--language", default="Auto")
     parser.add_argument(
+        "--attn-implementation",
+        choices=("sdpa", "eager", "flash_attention_2"),
+        default="sdpa",
+        help="Transformers attention backend (default: sdpa).",
+    )
+    parser.add_argument(
         "--overwrite",
         action="store_true",
         help="Delete requested speaker outputs and regenerate them from item 1.",
@@ -102,6 +108,7 @@ def state_payload(
     model_path: str,
     language: str,
     sample_rate: int,
+    attn_implementation: str,
 ) -> dict[str, Any]:
     inputs_json = json.dumps(items, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
     return {
@@ -111,6 +118,7 @@ def state_payload(
         "model_path": model_path,
         "language": language,
         "sample_rate": sample_rate,
+        "attn_implementation": attn_implementation,
     }
 
 
@@ -210,12 +218,17 @@ def write_metadata(path: Path, records: list[dict[str, str]]) -> None:
     atomic_write_text(path, content)
 
 
-def default_model_loader(model_path: str, device: str) -> Any:
+def default_model_loader(model_path: str, device: str, attn_implementation: str) -> Any:
     import torch
     from qwen_tts import Qwen3TTSModel
 
     dtype = torch.float32 if device.casefold().startswith("cpu") else torch.bfloat16
-    return Qwen3TTSModel.from_pretrained(model_path, device_map=device, dtype=dtype)
+    return Qwen3TTSModel.from_pretrained(
+        model_path,
+        device_map=device,
+        dtype=dtype,
+        attn_implementation=attn_implementation,
+    )
 
 
 def default_audio_writer(wav: Any, source_rate: int, target: Path, target_rate: int) -> None:
@@ -264,7 +277,12 @@ def generate_dataset(
 
     states = {
         speaker: state_payload(
-            items, speaker, args.model_path, args.language, args.sample_rate
+            items,
+            speaker,
+            args.model_path,
+            args.language,
+            args.sample_rate,
+            args.attn_implementation,
         )
         for speaker in speakers
     }
@@ -288,7 +306,7 @@ def generate_dataset(
         print("Failed rows: 0")
         return
 
-    model = model_loader(args.model_path, args.device)
+    model = model_loader(args.model_path, args.device, args.attn_implementation)
     validate_supported_speakers(model, speakers)
 
     if args.overwrite:

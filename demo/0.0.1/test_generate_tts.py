@@ -46,6 +46,7 @@ class DemoTests(unittest.TestCase):
             model_path="test-model",
             device="cuda:0",
             language="Auto",
+            attn_implementation="sdpa",
             overwrite=overwrite,
         )
 
