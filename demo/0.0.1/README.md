@@ -4,6 +4,17 @@ This demo generates every JSON input for every named Qwen3-TTS CustomVoice
 speaker. It uses the 1.7B model because the 0.6B CustomVoice model does not
 apply instruction prompts.
 
+On server `u`, launch the prepared air-conditioner dataset with:
+
+```bash
+./demo/0.0.1/run.sh
+```
+
+The wrapper submits one Ampere GPU on the `gpu` partition and uses the prepared
+input, speakers, local model, and output paths under
+`/mnt/users/jinyang_wang/TTS_qwen3TTS`. Extra demo arguments are forwarded, so
+`./demo/0.0.1/run.sh --overwrite` deliberately restarts the dataset.
+
 Install the project first (for example, `pip install -e .`), then run from the
 repository root:
 
